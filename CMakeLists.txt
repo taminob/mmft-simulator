@@ -12,10 +12,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(PLATFORM_CPU_SISD)
-IF (!WIN32)
-    set(CMAKE_CXX_FLAGS "-O3 -Wall -march=native -mtune=native")
+
+IF (NOT WIN32)
+	set(CMAKE_CXX_FLAGS "-O3 -Wall -march=native -mtune=native")
 ELSE()
-    set(CMAKE_CXX_FLAGS "-Wall -march=native /EHsc")
+	set(CMAKE_CXX_FLAGS "-Wall -march=native /EHsc")
 ENDIF()
 
 # download external libraries
@@ -57,8 +58,17 @@ endif()
 add_library(lbmLib)
 target_compile_features(lbmLib PRIVATE cxx_std_17)
 
+if(WIN32)
 set(LBM_HEADER_LIST
     incl/unistd.h
+)
+endif()
+
+set(LBM_DEPENDENCIES_LIST
+    ${lbm_SOURCE_DIR}/external/tinyxml/tinyxml.cpp
+    ${lbm_SOURCE_DIR}/external/tinyxml/tinystr.cpp
+    ${lbm_SOURCE_DIR}/external/tinyxml/tinyxmlerror.cpp
+    ${lbm_SOURCE_DIR}/external/tinyxml/tinyxmlparser.cpp
 )
 
 set(LBM_SOURCE_LIST
@@ -72,11 +82,10 @@ IF(VERBOSE)
     ADD_DEFINITIONS(-DVERBOSE)
 ENDIF()
 
-target_sources(lbmLib PUBLIC ${LBM_HEADER_LIST} ${LBM_SOURCE_LIST})
+target_sources(lbmLib PUBLIC ${LBM_HEADER_LIST} ${LBM_SOURCE_LIST} ${LBM_DEPENDENCIES_LIST})
 
 target_include_directories(
     lbmLib PUBLIC ${lbm_SOURCE_DIR}/src
-    incl
     ${lbm_SOURCE_DIR}/external/tinyxml
     ${lbm_SOURCE_DIR}/external/zlib
 )
