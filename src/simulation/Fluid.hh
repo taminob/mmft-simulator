@@ -5,11 +5,11 @@
 namespace sim {
 
 template<typename T>
-Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, T molecularSize_, T diffusionCoefficient_, T saturation_) : Fluid(id_, density_, viscosity_, concentration_, molecularSize_, diffusionCoefficient_, saturation_, "") { }
+Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, T molecularSize_, T diffusionCoefficient_, T saturation_, int mixtureId) : Fluid(id_, density_, viscosity_, concentration_, molecularSize_, diffusionCoefficient_, saturation_, mixtureId, "") { }
 
 template<typename T>
-Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, T molecularSize_, T diffusionCoefficient_, T saturation_, std::string name_) : id(id_), name(std::move(name_)),
-    density(density_), viscosity(viscosity_), concentration(concentration_), molecularSize(molecularSize_), diffusionCoefficient(diffusionCoefficient_), saturation(saturation_) { }
+Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, T molecularSize_, T diffusionCoefficient_, T saturation_, int mixtureId_, std::string name_) : id(id_), name(std::move(name_)),
+    mixtureId(mixtureId_), density(density_), viscosity(viscosity_), concentration(concentration_), molecularSize(molecularSize_), diffusionCoefficient(diffusionCoefficient_), saturation(saturation_) { }
 
 template<typename T>
 void Fluid<T>::setName(std::string name_) {

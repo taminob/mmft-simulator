@@ -74,8 +74,8 @@ PYBIND11_MODULE(pysimulator, m) {
 		.def("setPlatform", &sim::Simulation<T>::setPlatform)
 		.def("setType", &sim::Simulation<T>::setType)
 		.def("setNetwork", &sim::Simulation<T>::setNetwork)
-		.def("addFluid", [](sim::Simulation<T> &simulation, T density, T viscosity, T concentration) {
-				return simulation.addFluid(viscosity, density, concentration)->getId();
+		.def("addFluid", [](sim::Simulation<T> &simulation, T density, T viscosity, T concentration, T molecularSize, T diffusionCoefficient, T saturation) {
+				return simulation.addFluid(viscosity, density, concentration, molecularSize, diffusionCoefficient, saturation)->getId();
 			})
 		.def("addDroplet", [](sim::Simulation<T> &simulation, int fluidId, T volume) {
 				return simulation.addDroplet(fluidId, volume)->getId();

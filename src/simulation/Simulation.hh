@@ -8,10 +8,11 @@ namespace sim {
     }
 
     template<typename T>
-    Fluid<T>* Simulation<T>::addFluid(T viscosity, T density, T concentration) {
+    Fluid<T>* Simulation<T>::addFluid(T viscosity, T density, T concentration, T molecularSize, T diffusionCoefficient, T saturation) {
         auto id = fluids.size();
 
-        auto result = fluids.insert_or_assign(id, std::make_unique<Fluid<T>>(id, density, viscosity, concentration));
+        auto result = fluids.insert_or_assign(id, std::make_unique<Fluid<T>>(id, density, viscosity, concentration, molecularSize, diffusionCoefficient, saturation));
+        addMixture(std::unordered_map<int, double>{{id, concentration}});
 
         return result.first->second.get();
     }
@@ -541,9 +542,13 @@ namespace sim {
         T viscosity = ratio0 * fluid0->getViscosity() + ratio1 * fluid1->getViscosity();
         T density = ratio0 * fluid0->getDensity() + ratio1 * fluid1->getDensity();
         T concentration = ratio0 * fluid0->getConcentration() + ratio1 * fluid1->getConcentration();
+        // TODO(taminob)
+        T molecularSize{};
+        T diffusionCoefficient{};
+        T saturation{};
 
         // add new fluid
-        auto newFluid = addFluid(viscosity, density, concentration);
+        auto newFluid = addFluid(viscosity, density, concentration, molecularSize, diffusionCoefficient, saturation);
 
         //add previous fluids
         newFluid->addMixedFluid(fluid0);

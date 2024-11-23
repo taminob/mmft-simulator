@@ -218,7 +218,7 @@ public:
      * @param[in] concentration Concentration of the fluid in % (between 0.0 and 1.0).
      * @return Pointer to created fluid.
      */
-    Fluid<T>* addFluid(T viscosity, T density, T concentration);
+    Fluid<T>* addFluid(T viscosity, T density, T concentration, T molecularSize, T diffusionCoefficient, T saturation);
 
     /**
      * @brief Create droplet.
