@@ -308,7 +308,7 @@ template<typename T>
 int Network<T>::addMembraneToChannel(int channelId, T height, T width, T poreRadius, T porosity) {
     auto channel = getChannel(channelId);
     auto id = nextId();
-    auto membrane = std::make_unique<Membrane>(id, channel->getNode0(), channel->getNode1(), height, width, channel->getLength(), poreRadius, porosity);
+    auto membrane = std::make_unique<Membrane>(id, channel->getNodeA(), channel->getNodeB(), height, width, channel->getLength(), poreRadius, porosity);
     membrane->setChannel(channel);
 
     membranes.insert_or_assign(id, std::move(membrane));
@@ -320,7 +320,7 @@ template<typename T>
 int Network<T>::addOrganToMembrane(int membraneId, T height, T width) {
     auto membrane = getMembrane(membraneId);
     auto id = nextId();
-    auto organ = std::make_unique<Organ>(id, membrane->getNode0(), membrane->getNode1(), height, width, membrane->getLength());
+    auto organ = std::make_unique<Organ>(id, membrane->getNodeA(), membrane->getNodeB(), height, width, membrane->getLength());
     membrane->setOrgan(organ.get());
 
     organs.insert_or_assign(id, std::move(organ));
@@ -569,7 +569,7 @@ const std::unordered_map<int, std::unique_ptr<PressurePump<T>>>& Network<T>::get
 template<typename T>
 Membrane<T>* Network<T>::getMembraneBetweenNodes(int nodeId0, int nodeId1) {
     for (auto& [key, membrane] : membranes) {
-        if (((membrane->getNode0()->getId() == nodeId0) && (membrane->getNode1()->getId() == nodeId1)) || ((membrane->getNode0()->getId() == nodeId1) && (membrane->getNode1()->getId() == nodeId0))) {
+        if (((membrane->getNodeA()->getId() == nodeId0) && (membrane->getNodeB()->getId() == nodeId1)) || ((membrane->getNodeA()->getId() == nodeId1) && (membrane->getNodeB()->getId() == nodeId0))) {
             return membrane.get();
         }
     }
@@ -580,7 +580,7 @@ template<typename T>
 std::vector<Membrane<T>*> Network<T>::getMembranesAtNode(int nodeId) {
     std::vector<Membrane<T>*> membrane_vector;
     for (auto& [key, membrane] : membranes) {
-        if ((membrane->getNode0()->getId() == nodeId) || (membrane->getNode1()->getId() == nodeId)) {
+        if ((membrane->getNodeA()->getId() == nodeId) || (membrane->getNodeB()->getId() == nodeId)) {
             membrane_vector.push_back(membrane.get());
         }
     }
@@ -590,7 +590,7 @@ std::vector<Membrane<T>*> Network<T>::getMembranesAtNode(int nodeId) {
 template<typename T>
 Organ<T>* Network<T>::getOrganBetweenNodes(int nodeId0, int nodeId1) {
     for (auto& [key, organ] : organs) {
-        if (((organ->getNode0()->getId() == nodeId0) && (organ->getNode1()->getId() == nodeId1)) || ((organ->getNode0()->getId() == nodeId1) && (organ->getNode1()->getId() == nodeId0))) {
+        if (((organ->getNodeA()->getId() == nodeId0) && (organ->getNodeB()->getId() == nodeId1)) || ((organ->getNodeA()->getId() == nodeId1) && (organ->getNodeB()->getId() == nodeId0))) {
             return organ.get();
         }
     }
