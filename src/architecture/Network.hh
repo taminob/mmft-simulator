@@ -178,6 +178,11 @@ void Network<T>::visitNodes(int id, std::unordered_map<int, bool>& visitedNodes,
 }
 
 template<typename T>
+int Network<T>::nextId() const {
+    return channels.size() + flowRatePumps.size() + pressurePumps.size() + membranes.size() + organs.size();
+}
+
+template<typename T>
 Node<T>* Network<T>::addNode(T x_, T y_, bool ground_) {
     int nodeId = nodes.size();
     auto result = nodes.insert({nodeId, std::make_unique<Node<T>>(nodeId, x_, y_, ground_)});
@@ -223,7 +228,7 @@ RectangularChannel<T>* Network<T>::addChannel(int nodeAId, int nodeBId, T height
     // create channel
     auto nodeA = nodes.at(nodeAId);
     auto nodeB = nodes.at(nodeBId);
-    auto id = channels.size() + flowRatePumps.size() + pressurePumps.size();
+    auto id = nextId();
     auto addChannel = new RectangularChannel<T>(id, nodeA, nodeB, width, height);
 
     addChannel->setChannelType(type);
@@ -262,7 +267,7 @@ RectangularChannel<T>* Network<T>::addChannel(int nodeAId, int nodeBId, T height
     // create channel
     auto nodeA = nodes.at(nodeAId);
     auto nodeB = nodes.at(nodeBId);
-    auto id = channels.size() + flowRatePumps.size() + pressurePumps.size();
+    auto id = nextId();
     auto addChannel = new RectangularChannel<T>(id, nodeA, nodeB, width, height);
 
     addChannel->setLength(length);
@@ -283,7 +288,7 @@ RectangularChannel<T>* Network<T>::addChannel(int nodeAId, int nodeBId, T resist
     // create channel
     auto nodeA = nodes.at(nodeAId);
     auto nodeB = nodes.at(nodeBId);
-    auto id = channels.size() + flowRatePumps.size() + pressurePumps.size();
+    auto id = nextId();
     auto addChannel = new RectangularChannel<T>(id, nodeA, nodeB, 1.0, 1.0);
 
     addChannel->setResistance(resistance);
@@ -300,9 +305,33 @@ RectangularChannel<T>* Network<T>::addChannel(int nodeAId, int nodeBId, T resist
 }
 
 template<typename T>
+int Network<T>::addMembraneToChannel(int channelId, T height, T width, T poreRadius, T porosity) {
+    auto channel = getChannel(channelId);
+    auto id = nextId();
+    auto membrane = std::make_unique<Membrane>(id, channel->getNode0(), channel->getNode1(), height, width, channel->getLength(), poreRadius, porosity);
+    membrane->setChannel(channel);
+
+    membranes.insert_or_assign(id, std::move(membrane));
+
+    return id;
+}
+
+template<typename T>
+int Network<T>::addOrganToMembrane(int membraneId, T height, T width) {
+    auto membrane = getMembrane(membraneId);
+    auto id = nextId();
+    auto organ = std::make_unique<Organ>(id, membrane->getNode0(), membrane->getNode1(), height, width, membrane->getLength());
+    membrane->setOrgan(organ.get());
+
+    organs.insert_or_assign(id, std::move(organ));
+
+    return id;
+}
+
+template<typename T>
 FlowRatePump<T>* Network<T>::addFlowRatePump(int nodeAId, int nodeBId, T flowRate) {
     // create pump
-    auto id = channels.size() + flowRatePumps.size() + pressurePumps.size();
+    auto id = nextId();
     auto addPump = new FlowRatePump<T>(id, nodeAId, nodeBId, flowRate);
 
     // add pump
@@ -314,7 +343,7 @@ FlowRatePump<T>* Network<T>::addFlowRatePump(int nodeAId, int nodeBId, T flowRat
 template<typename T>
 PressurePump<T>* Network<T>::addPressurePump(int nodeAId, int nodeBId, T pressure) {
     // create pump
-    auto id = channels.size() + flowRatePumps.size() + pressurePumps.size();
+    auto id = nextId();
     auto addPump = new PressurePump<T>(id, nodeAId, nodeBId, pressure);
 
     // add pump
@@ -496,8 +525,22 @@ FlowRatePump<T>* Network<T>::getFlowRatePump(int pumpId_) const {
 }
 
 template<typename T>
+Membrane<T>* Network<T>::getMembrane(int membraneId) {
+    try {
+        return membranes.at(membraneId).get();
+    } catch (const std::out_of_range& e) {
+        throw std::invalid_argument("Membrane with ID " + std::to_string(membraneId) + " does not exist.");
+    }
+}
+
+template<typename T>
 const std::unordered_map<int, std::unique_ptr<RectangularChannel<T>>>& Network<T>::getChannels() const {
     return channels;
+}
+
+template<typename T>
+const std::unordered_map<int, std::unique_ptr<Membrane<T>>>& Network<T>::getMembranes() const {
+    return membranes;
 }
 
 template<typename T>
@@ -522,6 +565,38 @@ template<typename T>
 const std::unordered_map<int, std::unique_ptr<PressurePump<T>>>& Network<T>::getPressurePumps() const {
     return pressurePumps;
 }
+
+template<typename T>
+Membrane<T>* Network<T>::getMembraneBetweenNodes(int nodeId0, int nodeId1) {
+    for (auto& [key, membrane] : membranes) {
+        if (((membrane->getNode0()->getId() == nodeId0) && (membrane->getNode1()->getId() == nodeId1)) || ((membrane->getNode0()->getId() == nodeId1) && (membrane->getNode1()->getId() == nodeId0))) {
+            return membrane.get();
+        }
+    }
+    throw std::invalid_argument("Membrane between ID " + std::to_string(nodeId0) + " and ID " + std::to_string(nodeId1) + " does not exist.");
+}
+
+template<typename T>
+std::vector<Membrane<T>*> Network<T>::getMembranesAtNode(int nodeId) {
+    std::vector<Membrane<T>*> membrane_vector;
+    for (auto& [key, membrane] : membranes) {
+        if ((membrane->getNode0()->getId() == nodeId) || (membrane->getNode1()->getId() == nodeId)) {
+            membrane_vector.push_back(membrane.get());
+        }
+    }
+    return membrane_vector;
+}
+
+template<typename T>
+Organ<T>* Network<T>::getOrganBetweenNodes(int nodeId0, int nodeId1) {
+    for (auto& [key, organ] : organs) {
+        if (((organ->getNode0()->getId() == nodeId0) && (organ->getNode1()->getId() == nodeId1)) || ((organ->getNode0()->getId() == nodeId1) && (organ->getNode1()->getId() == nodeId0))) {
+            return organ.get();
+        }
+    }
+    throw std::invalid_argument("Organ between ID " + std::to_string(nodeId0) + " and ID " + std::to_string(nodeId1) + " does not exist.");
+}
+
 
 template<typename T>
 std::shared_ptr<Module<T>> Network<T>::getModule(int moduleId) const {
