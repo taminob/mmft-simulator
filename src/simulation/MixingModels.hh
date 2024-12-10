@@ -1,5 +1,7 @@
 #include "MixingModels.h"
+#include "MembraneModels.h"
 
+#include <cassert>
 #include <unordered_map>
 #include <deque>
 #include <iostream>
@@ -227,8 +229,107 @@ void InstantaneousMixingModel<T>::storeConcentrations(Simulation<T>* sim, const 
 template<typename T>
 void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* network, Simulation<T>* sim, std::unordered_map<int, std::unique_ptr<Mixture<T>>>& mixtures) {
 
+    // TODO(taminob): apply membranes to mixturesInEdge; simulation/Simulation.cpp:779
+    //updateNodeInflow(timeStep, network); // TODO: was this missing? function never used
+                                         //       where are pumps?
+    for (auto& [nodeId, node] : network->getNodes()) {
+        // membranes & organs
+        // only update fluid positions
+        // contributes to outflow at node only indirectly through the fluid concentration exchange with the connected channel
+        for (auto& membrane : network->getMembranesAtNode()) {
+            auto* organ = membrane->getOrgan();
+            auto* channel = membrane->getChannel();
+            // mixtures move through the organ at the same speed as through the connected channel
+            // this is an abstraction to get time-accurate results
+            // in reality, there is no flow rate in the organ
+            auto flowRate = channel->getFlowRate();
+            if ((flowRate > 0.0 && channel->getNodeB()->getId() == nodeId) || (flowRate < 0.0 && channel->getNodeA()->getId() == nodeId)) {
+                for (auto& [mixtureId, endPos] : this->mixturesInEdge.at(membrane->getId())) {
+                    double movedDistance = (std::abs(flowRate) * timeStep) / channel->getVolume();
+                    double newEndPos = 0.0;
+                    if (flowRate < 0) {
+                        newEndPos = std::max(0.0, endPos - movedDistance);
+                    } else {
+                        newEndPos = std::min(endPos + movedDistance, 1.0);
+                    }
+                    endPos = newEndPos;
+                }
+                for (auto& [mixtureId, endPos] : this->mixturesInEdge.at(organ->getId())) {
+                    double movedDistance = (std::abs(flowRate) * timeStep) / channel->getVolume();
+                    double newEndPos = 0.0;
+                    if (flowRate < 0) {
+                        newEndPos = std::max(0.0, endPos - movedDistance);
+                    } else {
+                        newEndPos = std::min(endPos + movedDistance, 1.0);
+                    }
+                    endPos = newEndPos;
+                }
+            }
+        }
+    }
+
     generateNodeOutflow(sim, mixtures);
     updateChannelInflow(timeStep, network, mixtures);
+    // TODO(taminob): apply membranes and organs to mixturesInEdge for new fluids?; simulation/Simulation.cpp:856
+        /*
+    calculate exchange between organ and channel through membranes and change mixtures accordingly
+    */
+    for (auto& [nodeId, node] : network->getNodes()) {
+        for (auto membrane : network->getMembranesAtNode(nodeId)) {
+            auto* organ = membrane->getOrgan();
+            // mixtures move through the organ at the same speed as through the connected channel
+            // this is an abstraction to get time-accurate results
+            // in reality, there is no flow rate in the organ
+            auto* channel = membrane->getChannel();
+            double channelFlowRate = channel->getFlowRate();
+            if ((channelFlowRate > 0.0 && organ->getNodeB()->getId() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeA()->getId() == nodeId)) {
+                int mixturesInChannelSize = this->mixturesInEdge.at(channel->getId()).size();
+                int mixturesInOrganSize = this->mixturesInEdge.at(organ->getId()).size();
+                assert(mixturesInChannelSize == mixturesInOrganSize);
+                int dequeIdx = mixturesInChannelSize - 1;
+                double startPos = 0.0;
+                for (auto it = this->mixturesInEdge.at(organ->getId()).rbegin(); it != this->mixturesInEdge.at(organ->getId()).rend(); it++) {
+                    auto& [oldOrganMixtureId, endPos] = *it;
+                    double mixtureLengthAbs = (endPos - startPos) * channel->getLength();
+
+                    auto& currMixtureOrgan = mixtures.at(oldOrganMixtureId);
+                    std::unordered_map<int, double> newFluidConcentrationsOrgan(currMixtureOrgan.getFluidConcentrations());
+                    int newOrganMixtureId = network->addMixture(std::move(newFluidConcentrationsOrgan));
+                    oldOrganMixtureId = newOrganMixtureId;
+
+                    auto& currMixtureChannel = mixtures.at(this->mixturesInEdge.at(channel->getId()).at(dequeIdx).first);
+                    std::unordered_map<int, double> newFluidConcentrationsChannel(currMixtureChannel.getFluidConcentrations());
+                    int newChannelMixtureId = network->addMixture(std::move(newFluidConcentrationsChannel));
+                    this->mixturesInEdge.at(channel->getId()).at(dequeIdx).first = newChannelMixtureId;
+
+                    for (auto& [fluidId, fluid] : this->fluids) {
+                        double area = membrane->getWidth() * mixtureLengthAbs;
+                        // TODO(taminob): decide who owns the membrane resistance model
+                        auto membraneResistanceModel = std::make_unique<MembraneResistanceModel0<T>>();
+                        double resistance = membraneResistanceModel->getMembraneResistance(membrane, this->fluids.at(fluidId).get(), area);
+                        double fluidSaturation = this->fluids.at(fluidId)->getSaturation();
+                        if (fluidSaturation != 0.0 && mixtureLengthAbs > 0.0) {
+                            double concentrationChannel = mixtures.at(newChannelMixtureId).getConcentrationofSpecie(fluidId);
+                            double concentrationOrgan = mixtures.at(newOrganMixtureId).getConcentrationofSpecie(fluidId);
+
+                            // positive flux defined to go from channel to organ
+                            // negative flux defined to go from organ to channel
+                            double concentrationDifference = (concentrationChannel - concentrationOrgan);
+                            double concentrationChangeMol = membrane->getConcentrationChange(resistance, timeStep, concentrationDifference, timeStep);
+
+                            double concentrationChangeOrgan = concentrationChangeMol / (mixtureLengthAbs * organ->getWidth() * organ->getHeight());
+                            double concentrationChangeChannel = concentrationChangeMol * -1 / (mixtureLengthAbs * channel->getWidth() * channel->getHeight());
+                            mixtures.at(newOrganMixtureId).changeFluidConcentration(fluidId, concentrationChangeOrgan);
+                            mixtures.at(newChannelMixtureId).changeFluidConcentration(fluidId, concentrationChangeChannel);
+                        }
+                    }
+                    startPos = endPos;
+                    dequeIdx--;
+                }
+            }
+        }
+    }
+
     clean(network);
     this->updateMinimalTimeStep(network);
 }
@@ -340,6 +441,35 @@ void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, arch::Network<
                 }
             }
         }
+
+                // membranes & organs
+        for (auto& membrane : network->getMembranesAtNode(nodeId)) {
+            auto* organ = membrane->getOrgan();
+            auto* membraneChannel = membrane->getChannel();
+            double channelFlowRate = membrane->getChannel()->getFlowRate();
+            // check if edge is an outflow edge to this node
+            if ((channelFlowRate > 0.0 && organ->getNodeA()->getId() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeB()->getId() == nodeId)) {
+                double movedDistance = (std::abs(channelFlowRate) * timeStep) / membraneChannel->getVolume();
+                double newEndPos = movedDistance;
+                assert(newEndPos <= 1.0 && newEndPos >= 0.0);
+                // copy the mixture that outflows the organ as new mixture at the inflow (to ensure mass conservation)
+                // concentration that diffuses through membrane from new inflow is added later (see below)
+                auto& currMixtureOrgan = mixtures.at(this->mixturesInEdge.at(organ->getId()).front().first);
+                std::unordered_map<int, double> newFluidConcentrations(currMixtureOrgan.getFluidConcentrations());
+                int newMixtureId = network->addMixture(std::move(newFluidConcentrations));
+
+                if (mixtureOutflowAtNode.count(nodeId)) {
+                    if (channelFlowRate < 0.0) {
+                        this->injectMixtureInEdge(newMixtureId, membrane->getId());
+                        this->mixturesInEdge.at(organ->getId()).push_front(std::make_pair(newMixtureId, 1.0));
+                    } else {
+                        this->mixturesInEdge.at(membrane->getId()).push_back(std::make_pair(newMixtureId, newEndPos));
+                        this->mixturesInEdge.at(organ->getId()).push_back(std::make_pair(newMixtureId, newEndPos));
+                    }
+                }
+            }
+        }
+
     }
 }
 
