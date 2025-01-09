@@ -269,7 +269,7 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
     }
 
     generateNodeOutflow(sim, mixtures);
-    updateChannelInflow(timeStep, network, mixtures);
+    updateChannelInflow(timeStep, sim, network, mixtures);
     // TODO(taminob): apply membranes and organs to mixturesInEdge for new fluids?; simulation/Simulation.cpp:856
         /*
     calculate exchange between organ and channel through membranes and change mixtures accordingly
@@ -293,24 +293,24 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
                     double mixtureLengthAbs = (endPos - startPos) * channel->getLength();
 
                     auto& currMixtureOrgan = mixtures.at(oldOrganMixtureId);
-                    std::unordered_map<int, double> newFluidConcentrationsOrgan(currMixtureOrgan.getFluidConcentrations());
-                    int newOrganMixtureId = network->addMixture(std::move(newFluidConcentrationsOrgan));
+                    std::unordered_map<int, double> newFluidConcentrationsOrgan(currMixtureOrgan->getSpecieConcentrations());
+                    int newOrganMixtureId = sim->addMixture(std::move(newFluidConcentrationsOrgan))->getId();
                     oldOrganMixtureId = newOrganMixtureId;
 
                     auto& currMixtureChannel = mixtures.at(this->mixturesInEdge.at(channel->getId()).at(dequeIdx).first);
-                    std::unordered_map<int, double> newFluidConcentrationsChannel(currMixtureChannel.getFluidConcentrations());
-                    int newChannelMixtureId = network->addMixture(std::move(newFluidConcentrationsChannel));
+                    std::unordered_map<int, double> newFluidConcentrationsChannel(currMixtureChannel->getSpecieConcentrations());
+                    int newChannelMixtureId = sim->addMixture(std::move(newFluidConcentrationsChannel))->getId();
                     this->mixturesInEdge.at(channel->getId()).at(dequeIdx).first = newChannelMixtureId;
 
-                    for (auto& [fluidId, fluid] : this->fluids) {
+                    for (auto& [fluidId, fluid] : sim->getFluids()) {
                         double area = membrane->getWidth() * mixtureLengthAbs;
                         // TODO(taminob): decide who owns the membrane resistance model
                         auto membraneResistanceModel = std::make_unique<MembraneResistanceModel0<T>>();
-                        double resistance = membraneResistanceModel->getMembraneResistance(membrane, this->fluids.at(fluidId).get(), area);
-                        double fluidSaturation = this->fluids.at(fluidId)->getSaturation();
+                        double resistance = membraneResistanceModel->getMembraneResistance(membrane, sim->getFluids().at(fluidId).get(), area);
+                        double fluidSaturation = sim->getFluids().at(fluidId)->getSaturation();
                         if (fluidSaturation != 0.0 && mixtureLengthAbs > 0.0) {
-                            double concentrationChannel = mixtures.at(newChannelMixtureId).getConcentrationOfSpecie(fluidId);
-                            double concentrationOrgan = mixtures.at(newOrganMixtureId).getConcentrationOfSpecie(fluidId);
+                            double concentrationChannel = mixtures.at(newChannelMixtureId)->getConcentrationOfSpecie(fluidId);
+                            double concentrationOrgan = mixtures.at(newOrganMixtureId)->getConcentrationOfSpecie(fluidId);
 
                             // positive flux defined to go from channel to organ
                             // negative flux defined to go from organ to channel
@@ -319,8 +319,8 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
 
                             double concentrationChangeOrgan = concentrationChangeMol / (mixtureLengthAbs * organ->getWidth() * organ->getHeight());
                             double concentrationChangeChannel = concentrationChangeMol * -1 / (mixtureLengthAbs * channel->getWidth() * channel->getHeight());
-                            mixtures.at(newOrganMixtureId).changeFluidConcentration(fluidId, concentrationChangeOrgan);
-                            mixtures.at(newChannelMixtureId).changeFluidConcentration(fluidId, concentrationChangeChannel);
+                            mixtures.at(newOrganMixtureId)->changeFluidConcentration(fluidId, concentrationChangeOrgan);
+                            mixtures.at(newChannelMixtureId)->changeFluidConcentration(fluidId, concentrationChangeChannel);
                         }
                     }
                     startPos = endPos;
@@ -430,7 +430,7 @@ void InstantaneousMixingModel<T>::generateNodeOutflow(Simulation<T>* sim, std::u
 }
 
 template<typename T>
-void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, arch::Network<T>* network, std::unordered_map<int, std::unique_ptr<Mixture<T>>>& mixtures) {
+void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, Simulation<T>* sim, arch::Network<T>* network, std::unordered_map<int, std::unique_ptr<Mixture<T>>>& mixtures) {
 
     for (auto& [nodeId, node] : network->getNodes()) {
         for (auto& channel : network->getChannelsAtNode(nodeId)) {
@@ -455,8 +455,8 @@ void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, arch::Network<
                 // copy the mixture that outflows the organ as new mixture at the inflow (to ensure mass conservation)
                 // concentration that diffuses through membrane from new inflow is added later (see below)
                 auto& currMixtureOrgan = mixtures.at(this->mixturesInEdge.at(organ->getId()).front().first);
-                std::unordered_map<int, double> newFluidConcentrations(currMixtureOrgan.getFluidConcentrations());
-                int newMixtureId = network->addMixture(std::move(newFluidConcentrations));
+                std::unordered_map<int, double> newFluidConcentrations(currMixtureOrgan->getSpecieConcentrations());
+                int newMixtureId = sim->addMixture(std::move(newFluidConcentrations))->getId();
 
                 if (mixtureOutflowAtNode.count(nodeId)) {
                     if (channelFlowRate < 0.0) {
