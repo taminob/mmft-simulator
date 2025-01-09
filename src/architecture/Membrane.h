@@ -24,7 +24,7 @@ class Membrane : public Edge<T> {
     T porosity = 0;            ///< Porosity of the membrane in % (between 0.0 and 1.0)
     T numberOfPores = 0;       ///< Numbers of pores of the membrane.
     T membraneResistance = 0;  ///< Resistance of the membrane in Pas/m^3.
-    Channel<T>* channel;               ///< Membrane on which the barrier is attached (length must be equal).
+    RectangularChannel<T>* channel;               ///< Membrane on which the barrier is attached (length must be equal).
     Organ<T>* organ;                   ///< Pointer to the organ this membrane is attached to (length must be equal).
 
   public:
@@ -97,7 +97,7 @@ class Membrane : public Edge<T> {
      * 
      * @param channel Pointer to the channel the membrane is attached to.
      */
-    void setChannel(Channel<T>* channel);
+    void setChannel(RectangularChannel<T>* channel);
 
     /**
      * @brief Set organ the membrane is connected to.
@@ -140,7 +140,7 @@ class Membrane : public Edge<T> {
      * 
      * @return Pointer to the channel the membrane is connected to.
      */
-    [[nodiscard]] Channel<T>* getChannel() const;
+    [[nodiscard]] RectangularChannel<T>* getChannel() const;
 
     /**
     * @brief Get pointer to the organ the membrane is connected to.
