@@ -569,7 +569,7 @@ const std::unordered_map<int, std::unique_ptr<PressurePump<T>>>& Network<T>::get
 template<typename T>
 Membrane<T>* Network<T>::getMembraneBetweenNodes(int nodeId0, int nodeId1) {
     for (auto& [key, membrane] : membranes) {
-        if (((membrane->getNodeA()->getId() == nodeId0) && (membrane->getNodeB()->getId() == nodeId1)) || ((membrane->getNodeA()->getId() == nodeId1) && (membrane->getNodeB()->getId() == nodeId0))) {
+        if (((membrane->getNodeA() == nodeId0) && (membrane->getNodeB() == nodeId1)) || ((membrane->getNodeA() == nodeId1) && (membrane->getNodeB() == nodeId0))) {
             return membrane.get();
         }
     }
@@ -580,7 +580,7 @@ template<typename T>
 std::vector<Membrane<T>*> Network<T>::getMembranesAtNode(int nodeId) {
     std::vector<Membrane<T>*> membrane_vector;
     for (auto& [key, membrane] : membranes) {
-        if ((membrane->getNodeA()->getId() == nodeId) || (membrane->getNodeB()->getId() == nodeId)) {
+        if ((membrane->getNodeA() == nodeId) || (membrane->getNodeB() == nodeId)) {
             membrane_vector.push_back(membrane.get());
         }
     }

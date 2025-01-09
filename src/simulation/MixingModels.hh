@@ -236,14 +236,14 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
         // membranes & organs
         // only update fluid positions
         // contributes to outflow at node only indirectly through the fluid concentration exchange with the connected channel
-        for (auto& membrane : network->getMembranesAtNode()) {
+        for (auto& membrane : network->getMembranesAtNode(nodeId)) {
             auto* organ = membrane->getOrgan();
             auto* channel = membrane->getChannel();
             // mixtures move through the organ at the same speed as through the connected channel
             // this is an abstraction to get time-accurate results
             // in reality, there is no flow rate in the organ
             auto flowRate = channel->getFlowRate();
-            if ((flowRate > 0.0 && channel->getNodeB()->getId() == nodeId) || (flowRate < 0.0 && channel->getNodeA()->getId() == nodeId)) {
+            if ((flowRate > 0.0 && channel->getNodeB() == nodeId) || (flowRate < 0.0 && channel->getNodeA() == nodeId)) {
                 for (auto& [mixtureId, endPos] : this->mixturesInEdge.at(membrane->getId())) {
                     double movedDistance = (std::abs(flowRate) * timeStep) / channel->getVolume();
                     double newEndPos = 0.0;
@@ -282,7 +282,7 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
             // in reality, there is no flow rate in the organ
             auto* channel = membrane->getChannel();
             double channelFlowRate = channel->getFlowRate();
-            if ((channelFlowRate > 0.0 && organ->getNodeB()->getId() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeA()->getId() == nodeId)) {
+            if ((channelFlowRate > 0.0 && organ->getNodeB() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeA() == nodeId)) {
                 int mixturesInChannelSize = this->mixturesInEdge.at(channel->getId()).size();
                 int mixturesInOrganSize = this->mixturesInEdge.at(organ->getId()).size();
                 assert(mixturesInChannelSize == mixturesInOrganSize);
@@ -309,8 +309,8 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
                         double resistance = membraneResistanceModel->getMembraneResistance(membrane, this->fluids.at(fluidId).get(), area);
                         double fluidSaturation = this->fluids.at(fluidId)->getSaturation();
                         if (fluidSaturation != 0.0 && mixtureLengthAbs > 0.0) {
-                            double concentrationChannel = mixtures.at(newChannelMixtureId).getConcentrationofSpecie(fluidId);
-                            double concentrationOrgan = mixtures.at(newOrganMixtureId).getConcentrationofSpecie(fluidId);
+                            double concentrationChannel = mixtures.at(newChannelMixtureId).getConcentrationOfSpecie(fluidId);
+                            double concentrationOrgan = mixtures.at(newOrganMixtureId).getConcentrationOfSpecie(fluidId);
 
                             // positive flux defined to go from channel to organ
                             // negative flux defined to go from organ to channel
@@ -448,7 +448,7 @@ void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, arch::Network<
             auto* membraneChannel = membrane->getChannel();
             double channelFlowRate = membrane->getChannel()->getFlowRate();
             // check if edge is an outflow edge to this node
-            if ((channelFlowRate > 0.0 && organ->getNodeA()->getId() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeB()->getId() == nodeId)) {
+            if ((channelFlowRate > 0.0 && organ->getNodeA() == nodeId) || (channelFlowRate < 0.0 && organ->getNodeB() == nodeId)) {
                 double movedDistance = (std::abs(channelFlowRate) * timeStep) / membraneChannel->getVolume();
                 double newEndPos = movedDistance;
                 assert(newEndPos <= 1.0 && newEndPos >= 0.0);
