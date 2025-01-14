@@ -41,6 +41,16 @@ T Fluid<T>::getConcentration() const {
 }
 
 template<typename T>
+T Fluid<T>::getDiffusionCoefficient() const {
+    return concentration;
+}
+
+template<typename T>
+T Fluid<T>::getSaturation() const {
+    return concentration;
+}
+
+template<typename T>
 void Fluid<T>::addMixedFluid(Fluid<T>* fluid) {
     mixedFluids.push_back(fluid);
 }

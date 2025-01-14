@@ -22,6 +22,8 @@ class Fluid {
     T viscosity;                        ///< Dynamic viscosity of the continuous phase in Pas.
     T concentration;
     T molecularSize;                    ///< Molecular size in m^3
+    T diffusionCoefficient;             ///< Diffusion coefficient of the fluid in m^2/s
+    T saturation;                       ///< Saturation value to translate the concentration in an actual concentration value [mol/m^3]
 
   public:
     /**
@@ -29,17 +31,21 @@ class Fluid {
      * @param[in] id Unique identifier of the fluid.
      * @param[in] density Density of the fluid in kg/m^3.
      * @param[in] viscosity Viscosity of the fluid in Pas.
+     * @param[in] diffusionCoefficient Diffusion coefficient of the fluid in m^2/s.
+     * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
      */
-    Fluid(int id, T density, T viscosity, T concentration);
+    Fluid(int id, T density, T viscosity, T concentration, T diffusionCoefficient, T saturation);
 
     /**
      * @brief Constructs a fluid.
      * @param[in] id Unique identifier of the fluid.
      * @param[in] density Density of the fluid in kg/m^3.
      * @param[in] viscosity Viscosity of the fluid in Pas.
+     * @param[in] diffusionCoefficient Diffusion coefficient of the fluid in m^2/s.
+     * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
      * @param[in] name Name of the fluid.
      */
-    Fluid(int id, T density, T viscosity, T concentration, std::string name);
+    Fluid(int id, T density, T viscosity, T concentration, T diffusionCoefficient, T saturation, std::string name);
 
     /**
      * @brief Set name of fluid.
@@ -83,6 +89,20 @@ class Fluid {
      * @return Molecular diameter in m. 
      */
     T getMolecularSize() const;
+
+    /**
+     * @brief Get the diffusion coefficient of the fluid.
+     *
+     * @return Diffusion coefficient of the fluid in m^2/s.
+     */
+    T getDiffusionCoefficient() const;
+
+    /**
+     * @brief Get the saturation of a fluid
+     *
+     * @return Saturation value to translate the concentration in an actual concentration value [mol/m^3].
+     */
+    T getSaturation() const;
 
     /**
      * @brief Adds a fluid from which the current fluid was created by mixing.
