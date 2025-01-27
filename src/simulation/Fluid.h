@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,7 @@ class Fluid {
     T viscosity;                        ///< Dynamic viscosity of the continuous phase in Pas.
     T concentration;
     T molecularSize;                    ///< Molecular size in m^3
-    T diffusionCoefficient;             ///< Diffusion coefficient of the fluid in m^2/s
+    std::optional<T> diffusivity;       ///< Diffusion coefficient of the fluid in m^2/s
     T saturation;                       ///< Saturation value to translate the concentration in an actual concentration value [mol/m^3]
 
   public:
@@ -31,21 +32,29 @@ class Fluid {
      * @param[in] id Unique identifier of the fluid.
      * @param[in] density Density of the fluid in kg/m^3.
      * @param[in] viscosity Viscosity of the fluid in Pas.
-     * @param[in] diffusionCoefficient Diffusion coefficient of the fluid in m^2/s.
-     * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
      */
-    Fluid(int id, T density, T viscosity, T concentration, T diffusionCoefficient, T saturation);
+    Fluid(int id, T density, T viscosity, T concentration);
 
     /**
      * @brief Constructs a fluid.
      * @param[in] id Unique identifier of the fluid.
      * @param[in] density Density of the fluid in kg/m^3.
      * @param[in] viscosity Viscosity of the fluid in Pas.
-     * @param[in] diffusionCoefficient Diffusion coefficient of the fluid in m^2/s.
+     * @param[in] diffusivity Diffusion coefficient of the fluid in m^2/s.
      * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
      * @param[in] name Name of the fluid.
      */
-    Fluid(int id, T density, T viscosity, T concentration, T diffusionCoefficient, T saturation, std::string name);
+    Fluid(int id, T density, T viscosity, T concentration, std::string name);
+
+    /**
+     * @brief Constructs a fluid.
+     * @param[in] id Unique identifier of the fluid.
+     * @param[in] density Density of the fluid in kg/m^3.
+     * @param[in] viscosity Viscosity of the fluid in Pas.
+     * @param[in] diffusivity Diffusion coefficient of the fluid in m^2/s.
+     * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
+     */
+    Fluid(int id, T density, T viscosity, T concentration, T diffusivity, T saturation, std::string name);
 
     /**
      * @brief Set name of fluid.
@@ -91,11 +100,13 @@ class Fluid {
     T getMolecularSize() const;
 
     /**
-     * @brief Get the diffusion coefficient of the fluid.
+     * @brief Get the diffusivity of the fluid.
      *
      * @return Diffusion coefficient of the fluid in m^2/s.
+     *
+     * @throws std::bad_optional_access if diffusivity is not set for this fluid.
      */
-    T getDiffusionCoefficient() const;
+    T getDiffusivity() const;
 
     /**
      * @brief Get the saturation of a fluid

@@ -8,7 +8,11 @@ Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_) : id(id_), 
 
 template<typename T>
 Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, std::string name_) : id(id_), 
-    density(density_), viscosity(viscosity_), name(name_) { }
+    density(density_), viscosity(viscosity_), concentration(concentration_), name(name_) { }
+
+template<typename T>
+Fluid<T>::Fluid(int id_, T density_, T viscosity_, T concentration_, T diffusivity_, T saturation_, std::string name_) : id(id_), 
+    density(density_), viscosity(viscosity_), concentration(concentration_), diffusivity(diffusivity_), saturation(saturation_), name(name_) { }
 
 template<typename T>
 void Fluid<T>::setName(std::string name_) {
@@ -41,8 +45,8 @@ T Fluid<T>::getConcentration() const {
 }
 
 template<typename T>
-T Fluid<T>::getDiffusionCoefficient() const {
-    return concentration;
+T Fluid<T>::getDiffusivity() const {
+    return concentration.value();
 }
 
 template<typename T>
