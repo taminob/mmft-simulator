@@ -221,6 +221,17 @@ public:
     Fluid<T>* addFluid(T viscosity, T density, T concentration);
 
     /**
+     * @brief Create fluid.
+     * @param[in] viscosity Viscosity of the fluid in Pas.
+     * @param[in] density Density of the fluid in kg/m^3.
+     * @param[in] concentration Concentration of the fluid in % (between 0.0 and 1.0).
+     * @param[in] diffusivity Diffusion coefficient of the fluid in m^2/s.
+     * @param[in] saturation Saturation of the fluid in mol/m^3.
+     * @return Pointer to created fluid.
+     */
+    Fluid<T>* addFluid(T viscosity, T density, T concentration, T diffusivity, T saturation);
+
+    /**
      * @brief Create droplet.
      * @param[in] fluidId Unique identifier of the fluid the droplet consists of.
      * @param[in] volume Volume of the fluid in m^3.

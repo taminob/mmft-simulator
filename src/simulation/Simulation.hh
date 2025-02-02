@@ -17,6 +17,15 @@ namespace sim {
     }
 
     template<typename T>
+    Fluid<T>* Simulation<T>::addFluid(T viscosity, T density, T concentration, T diffusionCoefficient, T saturation) {
+        auto id = fluids.size();
+
+        auto result = fluids.insert_or_assign(id, std::make_unique<Fluid<T>>(id, density, viscosity, concentration, diffusionCoefficient, saturation));
+
+        return result.first->second.get();
+    }
+
+    template<typename T>
     Droplet<T>* Simulation<T>::addDroplet(int fluidId, T volume) {
         auto id = droplets.size();
         auto fluid = fluids.at(fluidId).get();

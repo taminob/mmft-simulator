@@ -168,6 +168,8 @@ private:
 
     int generateInflows(int nodeId, T timeStep, arch::Network<T>* network);
 
+    Mixture<T>* createChangedMixture(const Mixture<T>& originalMixture, int fluidId, T concentrationChange, Simulation<T>& simulation);
+
 public:
 
     /**

@@ -1,6 +1,7 @@
 #include "MixingModels.h"
 #include "MembraneModels.h"
 
+#include <algorithm>
 #include <cassert>
 #include <unordered_map>
 #include <deque>
@@ -271,7 +272,10 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
     generateNodeOutflow(sim, mixtures);
     updateChannelInflow(timeStep, sim, network, mixtures);
     // TODO(taminob): apply membranes and organs to mixturesInEdge for new fluids?; simulation/Simulation.cpp:856
-        /*
+
+    // TODO(taminob): decide who owns the membrane resistance model or if re-create each call
+    auto membraneResistanceModel = std::make_unique<MembraneResistanceModel0<T>>();
+    /*
     calculate exchange between organ and channel through membranes and change mixtures accordingly
     */
     for (auto& [nodeId, node] : network->getNodes()) {
@@ -304,8 +308,6 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
 
                     for (auto& [fluidId, fluid] : sim->getFluids()) {
                         double area = membrane->getWidth() * mixtureLengthAbs;
-                        // TODO(taminob): decide who owns the membrane resistance model
-                        auto membraneResistanceModel = std::make_unique<MembraneResistanceModel0<T>>();
                         double resistance = membraneResistanceModel->getMembraneResistance(membrane, sim->getFluids().at(fluidId).get(), area);
                         double fluidSaturation = sim->getFluids().at(fluidId)->getSaturation();
                         if (fluidSaturation != 0.0 && mixtureLengthAbs > 0.0) {
@@ -319,8 +321,9 @@ void InstantaneousMixingModel<T>::updateMixtures(T timeStep, arch::Network<T>* n
 
                             double concentrationChangeOrgan = concentrationChangeMol / (mixtureLengthAbs * organ->getWidth() * organ->getHeight());
                             double concentrationChangeChannel = concentrationChangeMol * -1 / (mixtureLengthAbs * channel->getWidth() * channel->getHeight());
-                            mixtures.at(newOrganMixtureId)->changeFluidConcentration(fluidId, concentrationChangeOrgan);
-                            mixtures.at(newChannelMixtureId)->changeFluidConcentration(fluidId, concentrationChangeChannel);
+                            // TODO: does not work because new mixture has different id
+                            auto* newOrganMixture = createChangedMixture(*mixtures.at(newOrganMixtureId), fluidId, concentrationChangeOrgan, *sim);
+                            auto* newChannelMixture = createChangedMixture(*mixtures.at(newChannelMixtureId), fluidId, concentrationChangeChannel, *sim);
                         }
                     }
                     startPos = endPos;
@@ -472,6 +475,33 @@ void InstantaneousMixingModel<T>::updateChannelInflow(T timeStep, Simulation<T>*
 
     }
 }
+
+template<typename T>
+Mixture<T>* InstantaneousMixingModel<T>::createChangedMixture(const Mixture<T>& originalMixture, int fluidId, T concentrationChange, Simulation<T>& simulation) {
+    const auto& originalConcentrations = originalMixture.getSpecieConcentrations();
+    auto newConcentrations = originalConcentrations;
+
+    auto specieIter = originalConcentrations.find(fluidId);
+    if (specieIter != originalConcentrations.end()) {
+        auto newValue = specieIter->second + concentrationChange;
+        assert(newValue >= -0.1 && newValue <= 1.1);
+
+        newValue = std::clamp(newValue, 0.0, 1.0);
+
+        newConcentrations.insert({ specieIter->first, newValue });
+    } else {
+        assert(concentrationChange >= -0.1 && concentrationChange <= 1.1);
+
+        concentrationChange = std::clamp(concentrationChange, 0.0, 1.0);
+
+        auto* fluid = simulation.getFluid(fluidId);
+        auto newSpecie = simulation.addSpecie(fluid->getSaturation(), fluid->getDiffusivity());
+        newConcentrations.insert({ newSpecie->getId(), concentrationChange });
+    }
+
+    return simulation.addMixture(newConcentrations);
+}
+
 
 template<typename T>
 void InstantaneousMixingModel<T>::clean(arch::Network<T>* network) {

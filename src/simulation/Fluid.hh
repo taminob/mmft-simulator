@@ -46,12 +46,12 @@ T Fluid<T>::getConcentration() const {
 
 template<typename T>
 T Fluid<T>::getDiffusivity() const {
-    return concentration.value();
+    return diffusivity.value();
 }
 
 template<typename T>
 T Fluid<T>::getSaturation() const {
-    return concentration;
+    return saturation;
 }
 
 template<typename T>

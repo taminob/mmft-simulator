@@ -63,7 +63,7 @@ T Organ<T>::getVolume() const {
 
 template<typename T>
 T Organ<T>::getPressure() const {
-    return node0->getPressure() - node1->getPressure();
+    return this->nodeA->getPressure() - this->nodeB->getPressure();
 }
 
 template<typename T>
@@ -74,6 +74,7 @@ T Organ<T>::getFlowRate() const {
     return 0;
 }
 
+template<typename T>
 T Organ<T>::getResistance() const {
     return organResistance;
 }
