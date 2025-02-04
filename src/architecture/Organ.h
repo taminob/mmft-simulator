@@ -15,6 +15,7 @@ namespace arch {
 template<typename T>
 class Organ : public Edge<T> {
   private:
+    // TODO: need to store network for access to pressure at nodes?
     T height = 0;           ///< Height of a membrane in m.
     T width = 0;            ///< Width of a membrane in m.
     T length = 0;           ///< Length of a membrane in m.
