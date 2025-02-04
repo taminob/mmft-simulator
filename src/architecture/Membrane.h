@@ -40,7 +40,7 @@ class Membrane : public Edge<T> {
      * @param[in] porosity Porosity of the membrane.
      * @param[in] type Type of the membrane.
      */
-    Membrane(int id, Node<T>* node0, Node<T>* node1, T height, T width, T length, T poreRadius, T porosity);
+    Membrane(int id, int node0, int node1, T height, T width, T length, T poreRadius, T porosity);
 
     /**
      * @brief Constructor of a membrane.
@@ -50,7 +50,7 @@ class Membrane : public Edge<T> {
      * @param[in] resistance Resistance of the membrane in Pas/m^3.
      * @param[in] type Type of the membrane.
      */
-    Membrane(int id, Node<T>* node0, Node<T>* node1, T resistance);
+    Membrane(int id, int node0, int node1, T resistance);
 
     /**
      * @brief Set dimensions of a membrane.

@@ -308,7 +308,7 @@ template<typename T>
 int Network<T>::addMembraneToChannel(int channelId, T height, T width, T poreRadius, T porosity) {
     auto channel = getChannel(channelId);
     auto id = nextId();
-    auto membrane = std::make_unique<Membrane>(id, channel->getNodeA(), channel->getNodeB(), height, width, channel->getLength(), poreRadius, porosity);
+    auto membrane = std::make_unique<Membrane<T>>(id, channel->getNodeA(), channel->getNodeB(), height, width, channel->getLength(), poreRadius, porosity);
     membrane->setChannel(channel);
 
     membranes.insert_or_assign(id, std::move(membrane));
@@ -320,7 +320,7 @@ template<typename T>
 int Network<T>::addOrganToMembrane(int membraneId, T height, T width) {
     auto membrane = getMembrane(membraneId);
     auto id = nextId();
-    auto organ = std::make_unique<Organ>(id, membrane->getNodeA(), membrane->getNodeB(), height, width, membrane->getLength());
+    auto organ = std::make_unique<Organ<T>>(id, membrane->getNodeA(), membrane->getNodeB(), height, width, membrane->getLength());
     membrane->setOrgan(organ.get());
 
     organs.insert_or_assign(id, std::move(organ));

@@ -9,10 +9,10 @@
 namespace arch {
 
 template<typename T>
-Organ<T>::Organ(int id, Node<T>* node0, Node<T>* node1, T height, T width, T length) : Edge<T>(id, node0, node1), height(height), width(width), length(length) {}
+Organ<T>::Organ(int id, int node0, int node1, T height, T width, T length) : Edge<T>(id, node0, node1), height(height), width(width), length(length) {}
 
 template<typename T>
-Organ<T>::Organ(int id, Node<T>* node0, Node<T>* node1, T resistance) : Edge<T>(id, node0, node1), organResistance(resistance) {}
+Organ<T>::Organ(int id, int node0, int node1, T resistance) : Edge<T>(id, node0, node1), organResistance(resistance) {}
 
 template<typename T>
 void Organ<T>::setDimensions(T width, T height, T length) {

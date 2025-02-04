@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include "Membrane.h"
-#include "Organ.h"
-
 #include <fstream>
 #include <memory>
 #include <queue>
@@ -40,6 +37,10 @@ template<typename T>
 class PressurePump;
 template<typename T>
 class RectangularChannel;
+template<typename T>
+class Membrane;
+template<typename T>
+class Organ;
 
 /**
  * @brief A struct that defines an group, which is a detached abstract network, neighbouring the ground node(s) and/or CFD domains.

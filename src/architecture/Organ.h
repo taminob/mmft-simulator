@@ -6,7 +6,6 @@
 
 #include "Channel.h"
 #include "Edge.h"
-#include "Node.h"
 
 namespace arch {
 
@@ -31,7 +30,7 @@ class Organ : public Edge<T> {
      * @param[in] width Width of the membrane in m.
      * @param[in] length Length of the membrane in m.
      */
-    Organ(int id, Node<T>* node0, Node<T>* node1, T height, T width, T length);
+    Organ(int id, int node0, int node1, T height, T width, T length);
 
     /**
      * @brief Constructor of a membrane.
@@ -41,7 +40,7 @@ class Organ : public Edge<T> {
      * @param[in] resistance Resistance of the membrane in Pas/m^3.
      * @param[in] type Type of the membrane.
      */
-    Organ(int id, Node<T>* node0, Node<T>* node1, T resistance);
+    Organ(int id, int node0, int node1, T resistance);
 
     /**
      * @brief Set dimensions of a membrane.

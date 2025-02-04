@@ -8,10 +8,10 @@
 namespace arch {
 
 template<typename T>
-Membrane<T>::Membrane(int id, Node<T>* node0, Node<T>* node1, T height, T width, T length, T poreRadius, T porosity) : Edge<T>(id, node0, node1), height(height), width(width), length(length), poreRadius(poreRadius), porosity(porosity) {}
+Membrane<T>::Membrane(int id, int node0, int node1, T height, T width, T length, T poreRadius, T porosity) : Edge<T>(id, node0, node1), height(height), width(width), length(length), poreRadius(poreRadius), porosity(porosity) {}
 
 template<typename T>
-Membrane<T>::Membrane(int id, Node<T>* node0, Node<T>* node1, T resistance) : Edge<T>(id, node0, node1), membraneResistance(resistance) {}
+Membrane<T>::Membrane(int id, int node0, int node1, T resistance) : Edge<T>(id, node0, node1), membraneResistance(resistance) {}
 
 template<typename T>
 void Membrane<T>::setDimensions(T width, T height, T length) {

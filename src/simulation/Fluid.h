@@ -54,7 +54,7 @@ class Fluid {
      * @param[in] diffusivity Diffusion coefficient of the fluid in m^2/s.
      * @param[in] saturation Saturation value to translate the concentration in an actual concentration value [mol/m^3].
      */
-    Fluid(int id, T density, T viscosity, T concentration, T diffusivity, T saturation, std::string name);
+    Fluid(int id, T density, T viscosity, T concentration, T diffusivity, T saturation, std::string name = "");
 
     /**
      * @brief Set name of fluid.
